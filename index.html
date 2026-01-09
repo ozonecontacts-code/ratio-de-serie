@@ -1,0 +1,369 @@
+<!doctype html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <meta name="theme-color" content="#0b1220"/>
+  <link rel="manifest" href="manifest.json"/>
+  <link rel="icon" href="icon-192.png"/>
+  <title>Ratio de série</title>
+  <style>
+    :root{--bg:#0b1220;--card:#121b2d;--muted:#8aa0c6;--text:#e8f0ff;--accent:#4cc9f0;--warn:#ffd166;}
+    body{margin:0;font-family:system-ui,-apple-system,Segoe UI,Roboto,Ubuntu,"Helvetica Neue",Arial;
+         background:linear-gradient(180deg,#060a14,#0b1220 35%,#060a14);color:var(--text);}
+    header{padding:18px 16px 8px 16px;display:flex;align-items:flex-start;justify-content:space-between;gap:12px}
+    h1{margin:0;font-size:18px;letter-spacing:.2px}
+    .sub{color:var(--muted);font-size:12px;margin-top:6px;line-height:1.4}
+    .wrap{padding:12px 16px 28px 16px;max-width:980px;margin:0 auto;}
+    .grid{display:grid;grid-template-columns:1fr;gap:12px}
+    @media(min-width:900px){.grid{grid-template-columns:1.15fr .85fr}}
+    .card{background:rgba(18,27,45,.88);border:1px solid rgba(76,201,240,.14);border-radius:14px;padding:14px;box-shadow:0 10px 30px rgba(0,0,0,.25)}
+    .card h2{margin:0 0 10px 0;font-size:14px;color:var(--accent)}
+    .row{display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin:10px 0}
+    label{font-size:12px;color:var(--muted)}
+    input[type="number"], input[type="text"], select{
+      background:#0c1426;border:1px solid rgba(138,160,198,.25);color:var(--text);
+      border-radius:10px;padding:10px 10px;font-size:14px;outline:none;min-width:120px
+    }
+    input[type="number"]{width:120px}
+    button{
+      background:linear-gradient(90deg,#4cc9f0,#4895ef);border:none;color:#06101c;
+      font-weight:700;border-radius:12px;padding:10px 12px;font-size:14px;cursor:pointer
+    }
+    button.secondary{background:transparent;color:var(--text);border:1px solid rgba(138,160,198,.35);font-weight:600}
+    button.danger{background:transparent;color:#ff7b7b;border:1px solid rgba(255,123,123,.35);font-weight:700}
+    button:active{transform:scale(.99)}
+    table{width:100%;border-collapse:separate;border-spacing:0 8px;font-size:13px}
+    th{color:var(--muted);font-weight:600;text-align:left;font-size:12px}
+    td{background:#0c1426;border:1px solid rgba(138,160,198,.18);padding:10px;border-left:none;border-right:none}
+    tr td:first-child{border-left:1px solid rgba(138,160,198,.18);border-radius:10px 0 0 10px}
+    tr td:last-child{border-right:1px solid rgba(138,160,198,.18);border-radius:0 10px 10px 0}
+    .pill{display:inline-block;background:rgba(255,209,102,.14);border:1px solid rgba(255,209,102,.25);
+          color:var(--warn);padding:3px 8px;border-radius:999px;font-size:12px}
+    .small{font-size:12px;color:var(--muted);line-height:1.45}
+    .mono{font-family:ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono","Courier New", monospace}
+    .kpi{display:flex;gap:10px;flex-wrap:wrap}
+    .kpi .box{flex:1;min-width:150px;background:#0c1426;border:1px solid rgba(138,160,198,.18);border-radius:12px;padding:10px}
+    .kpi .n{font-size:20px;font-weight:800;color:var(--accent)}
+    .kpi .t{font-size:11px;color:var(--muted)}
+    .top-actions{display:flex;gap:8px;flex-wrap:wrap;justify-content:flex-end}
+    .toast{position:fixed;left:50%;bottom:18px;transform:translateX(-50%);background:#0c1426;
+           border:1px solid rgba(138,160,198,.25);color:var(--text);padding:10px 12px;border-radius:12px;
+           box-shadow:0 10px 30px rgba(0,0,0,.35);opacity:0;pointer-events:none;transition:opacity .2s}
+    .toast.show{opacity:1}
+  </style>
+</head>
+<body>
+<header>
+  <div>
+    <h1>Ratio de série</h1>
+    <div class="sub">Entre tes stocks (rouleaux) par couleur, choisis une <b>couleur base</b>, et obtiens ratios + packs conseillés. Les données se sauvegardent automatiquement.</div>
+  </div>
+  <div class="top-actions">
+    <button class="secondary" id="exportBtn">Exporter</button>
+    <button class="secondary" id="importBtn">Importer</button>
+    <button class="danger" id="resetBtn">Reset</button>
+  </div>
+</header>
+
+<div class="wrap">
+  <div class="grid">
+
+    <div class="card">
+      <h2>1) Stocks</h2>
+      <div class="small">Tu peux ajouter/supprimer des couleurs. Clique “Calculer” pour mettre à jour.</div>
+
+      <div class="row">
+        <button id="addColor">+ Ajouter couleur</button>
+        <button class="secondary" id="loadExample">Charger l’exemple</button>
+        <button class="secondary" id="calc">Calculer</button>
+      </div>
+
+      <div id="colors"></div>
+
+      <div class="row">
+        <label>Couleur base</label>
+        <select id="base"></select>
+
+        <label style="margin-left:6px">Pack à proposer (base)</label>
+        <input id="packBase" type="number" min="1" value="1"/>
+      </div>
+
+      <div class="small">
+        <span class="pill">Rappel</span>
+        Ratio = (stock couleur) / (stock base). Le pack conseille des quantités arrondies (faciles à vendre).
+      </div>
+    </div>
+
+    <div class="card">
+      <h2>2) Résultats</h2>
+
+      <div class="kpi">
+        <div class="box">
+          <div class="n" id="kpiSeries">—</div>
+          <div class="t">Séries complètes possibles (1 rouleau de chaque)</div>
+        </div>
+        <div class="box">
+          <div class="n" id="kpiBase">—</div>
+          <div class="t">Couleur base sélectionnée</div>
+        </div>
+        <div class="box">
+          <div class="n" id="kpiBottleneck">—</div>
+          <div class="t">Couleur la plus limitante (min stock global)</div>
+        </div>
+      </div>
+
+      <h2 style="margin-top:14px">Ratios & pack conseillé</h2>
+      <div class="small">Change “Pack base” (1, 2, 5…) pour générer des packs adaptés.</div>
+      <div id="out"></div>
+    </div>
+
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+  if ("serviceWorker" in navigator) {
+    window.addEventListener("load", () => navigator.serviceWorker.register("./sw.js"));
+  }
+
+  const STORAGE_KEY = "ratio-serie-state-v1";
+
+  const colorsDiv = document.getElementById('colors');
+  const baseSel = document.getElementById('base');
+  const outDiv = document.getElementById('out');
+  const toast = document.getElementById('toast');
+
+  function showToast(msg){
+    toast.textContent = msg;
+    toast.classList.add('show');
+    setTimeout(()=>toast.classList.remove('show'), 1600);
+  }
+
+  function escapeHtml(s){
+    return (s||'').replaceAll('&','&amp;').replaceAll('<','&lt;').replaceAll('>','&gt;').replaceAll('"','&quot;').replaceAll("'","&#039;");
+  }
+
+  function makeRow(name='', qty='') {
+    const wrap = document.createElement('div');
+    wrap.className = 'row';
+    wrap.innerHTML = `
+      <input class="cname" type="text" placeholder="Couleur (ex: Noir)" value="${escapeHtml(name)}"/>
+      <input class="cqty" type="number" min="0" placeholder="Rouleaux" value="${qty}"/>
+      <button class="secondary remove">Supprimer</button>
+    `;
+    wrap.querySelector('.remove').onclick = () => {
+      wrap.remove();
+      syncBaseOptions();
+      persist();
+      calc();
+    };
+    wrap.querySelector('.cname').addEventListener('input', ()=>{syncBaseOptions(); persist();});
+    wrap.querySelector('.cqty').addEventListener('input', ()=>{persist();});
+    return wrap;
+  }
+
+  function getData() {
+    const rows = [...colorsDiv.querySelectorAll('.row')];
+    const data = [];
+    for (const r of rows) {
+      const name = r.querySelector('.cname').value.trim();
+      const qty = Number(r.querySelector('.cqty').value);
+      if (name) data.push({name, qty: isFinite(qty) ? qty : 0});
+    }
+    return data;
+  }
+
+  function syncBaseOptions() {
+    const data = getData();
+    const current = baseSel.value;
+    baseSel.innerHTML = '';
+    for (const item of data) {
+      const opt = document.createElement('option');
+      opt.value = item.name;
+      opt.textContent = item.name;
+      baseSel.appendChild(opt);
+    }
+    if ([...baseSel.options].some(o => o.value === current)) baseSel.value = current;
+  }
+
+  function persist() {
+    const state = {
+      colors: getData(),
+      base: baseSel.value,
+      packBase: Number(document.getElementById('packBase').value) || 1
+    };
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+  }
+
+  function loadState() {
+    try {
+      const raw = localStorage.getItem(STORAGE_KEY);
+      if (!raw) return false;
+      const state = JSON.parse(raw);
+      if (!state || !Array.isArray(state.colors)) return false;
+
+      colorsDiv.innerHTML = '';
+      for (const c of state.colors) colorsDiv.appendChild(makeRow(c.name, c.qty));
+      syncBaseOptions();
+      if (state.base && [...baseSel.options].some(o => o.value === state.base)) baseSel.value = state.base;
+      document.getElementById('packBase').value = state.packBase || 1;
+      return true;
+    } catch { return false; }
+  }
+
+  function calc() {
+    const data = getData().filter(d => d.qty >= 0);
+    syncBaseOptions();
+
+    if (data.length === 0) {
+      outDiv.innerHTML = `<div class="small">Ajoute au moins une couleur.</div>`;
+      document.getElementById('kpiSeries').textContent = '—';
+      document.getElementById('kpiBase').textContent = '—';
+      document.getElementById('kpiBottleneck').textContent = '—';
+      return;
+    }
+
+    const baseName = baseSel.value || data[0].name;
+    const baseObj = data.find(d => d.name === baseName) || data[0];
+    const baseQty = baseObj.qty;
+
+    const minObj = data.reduce((a,b)=> (b.qty < a.qty ? b : a), data[0]);
+    const seriesPossible = minObj.qty;
+
+    document.getElementById('kpiSeries').textContent = (seriesPossible ?? '—');
+    document.getElementById('kpiBase').textContent = baseName || '—';
+    document.getElementById('kpiBottleneck').textContent = `${minObj.name} (${minObj.qty})`;
+
+    const packBase = Math.max(1, Number(document.getElementById('packBase').value) || 1);
+
+    const rows = data.map(d => {
+      const ratio = (baseQty > 0) ? (d.qty / baseQty) : null;
+      const packQty = (ratio === null) ? 0 : Math.max(0, Math.round(ratio * packBase));
+      return {...d, ratio, packQty};
+    }).sort((a,b)=> b.qty - a.qty);
+
+    let html = `<table>
+      <thead><tr>
+        <th>Couleur</th>
+        <th>Stock</th>
+        <th>Ratio vs <span class="mono">${escapeHtml(baseName)}</span></th>
+        <th>Pack conseillé (base = ${packBase})</th>
+      </tr></thead><tbody>`;
+
+    for (const r of rows) {
+      const ratioTxt = (r.ratio === null) ? '—' : r.ratio.toFixed(2);
+      html += `<tr>
+        <td>${escapeHtml(r.name)}</td>
+        <td>${r.qty}</td>
+        <td>${ratioTxt}</td>
+        <td><b>${r.packQty}</b> ${escapeHtml(r.name)} pour ${packBase} ${escapeHtml(baseName)}</td>
+      </tr>`;
+    }
+    html += `</tbody></table>`;
+
+    const packLine = rows
+      .filter(r => r.packQty > 0)
+      .sort((a,b)=> (a.packQty-b.packQty))
+      .map(r => `${r.packQty} ${r.name}`)
+      .join(' • ');
+
+    html += `<div class="small" style="margin-top:10px">
+      <span class="pill">Pack</span> Pour <b>${packBase} ${escapeHtml(baseName)}</b> : ${escapeHtml(packLine || '—')}
+    </div>`;
+
+    outDiv.innerHTML = html;
+    persist();
+  }
+
+  document.getElementById('addColor').onclick = () => {
+    colorsDiv.appendChild(makeRow());
+    syncBaseOptions();
+    persist();
+  };
+
+  document.getElementById('calc').onclick = () => calc();
+
+  document.getElementById('loadExample').onclick = () => {
+    colorsDiv.innerHTML = '';
+    const ex = [
+      ['Noir', 86], ['Gris', 88], ['Bordeaux', 20], ['Blanc', 21], ['Rose', 24],
+      ['Beige', 52], ['Bleu', 48], ['Kaki', 52], ['Marron', 52],
+    ];
+    for (const [n,q] of ex) colorsDiv.appendChild(makeRow(n,q));
+    syncBaseOptions();
+    baseSel.value = 'Bordeaux';
+    document.getElementById('packBase').value = 1;
+    calc();
+    showToast("Exemple chargé");
+  };
+
+  document.getElementById('resetBtn').onclick = () => {
+    localStorage.removeItem(STORAGE_KEY);
+    colorsDiv.innerHTML = '';
+    colorsDiv.appendChild(makeRow('Noir', 0));
+    colorsDiv.appendChild(makeRow('Gris', 0));
+    colorsDiv.appendChild(makeRow('Bordeaux', 0));
+    syncBaseOptions();
+    baseSel.value = 'Bordeaux';
+    document.getElementById('packBase').value = 1;
+    outDiv.innerHTML = `<div class="small">Entre tes stocks, puis clique “Calculer”.</div>`;
+    document.getElementById('kpiSeries').textContent = '—';
+    document.getElementById('kpiBase').textContent = '—';
+    document.getElementById('kpiBottleneck').textContent = '—';
+    showToast("Réinitialisé");
+  };
+
+  document.getElementById('exportBtn').onclick = async () => {
+    const raw = localStorage.getItem(STORAGE_KEY) || "{}";
+    const blob = new Blob([raw], {type:"application/json"});
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = "ratio-serie-backup.json";
+    a.click();
+    URL.revokeObjectURL(a.href);
+    showToast("Export OK");
+  };
+
+  document.getElementById('importBtn').onclick = async () => {
+    const inp = document.createElement('input');
+    inp.type = 'file';
+    inp.accept = 'application/json';
+    inp.onchange = () => {
+      const file = inp.files?.[0];
+      if (!file) return;
+      const reader = new FileReader();
+      reader.onload = () => {
+        try{
+          localStorage.setItem(STORAGE_KEY, String(reader.result));
+          loadState();
+          calc();
+          showToast("Import OK");
+        }catch(e){
+          showToast("Import impossible");
+        }
+      };
+      reader.readAsText(file);
+    };
+    inp.click();
+  };
+
+  const loaded = loadState();
+  if (!loaded) {
+    colorsDiv.appendChild(makeRow('Noir', 0));
+    colorsDiv.appendChild(makeRow('Gris', 0));
+    colorsDiv.appendChild(makeRow('Bordeaux', 0));
+    syncBaseOptions();
+    baseSel.value = 'Bordeaux';
+    document.getElementById('packBase').value = 1;
+    outDiv.innerHTML = `<div class="small">Entre tes stocks, puis clique “Calculer”.</div>`;
+  } else {
+    calc();
+  }
+
+  baseSel.addEventListener('change', ()=>{persist(); calc();});
+  document.getElementById('packBase').addEventListener('input', ()=>{persist(); calc();});
+</script>
+</body>
+</html>
