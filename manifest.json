@@ -1,12 +1,10 @@
 {
   "name": "Ratio de série",
-  "short_name": "Ratio série",
-  "start_url": "./index.html",
-  "scope": "./",
+  "short_name": "Ratio de série",
+  "start_url": "./",
   "display": "standalone",
   "background_color": "#0b1220",
   "theme_color": "#0b1220",
-  "description": "Calculateur de ratios et packs par couleur à partir du stock de rouleaux.",
   "icons": [
     {
       "src": "icon-192.png",

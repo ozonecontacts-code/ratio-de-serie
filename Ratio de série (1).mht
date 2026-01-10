@@ -1,0 +1,186 @@
+From: <Saved by Blink>
+Snapshot-Content-Location: https://ozonecontacts-code.github.io/ratio-de-serie/
+Subject: =?utf-8?Q?Ratio=20de=20s=C3=A9rie?=
+Date: Sat, 10 Jan 2026 01:03:16 +0100
+MIME-Version: 1.0
+Content-Type: multipart/related;
+	type="text/html";
+	boundary="----MultipartBoundary--Iot4O5GZpF1YQUswstJEwYulzSZxV6auD3wiszEpNY----"
+
+
+------MultipartBoundary--Iot4O5GZpF1YQUswstJEwYulzSZxV6auD3wiszEpNY----
+Content-Type: text/html
+Content-ID: <frame-A0DB8E765590AB93ED5CCA285713AE6A@mhtml.blink>
+Content-Transfer-Encoding: binary
+Content-Location: https://ozonecontacts-code.github.io/ratio-de-serie/
+
+<!DOCTYPE html><html lang="fr"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8"><link rel="stylesheet" type="text/css" href="cid:css-483b427d-5deb-43b3-9581-3ee1ed8b9c93@mhtml.blink" />
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#0b1220">
+  <link rel="manifest" href="https://ozonecontacts-code.github.io/ratio-de-serie/manifest.json">
+  <link rel="icon" href="https://ozonecontacts-code.github.io/ratio-de-serie/icon-192.png">
+  <title>Ratio de série</title>
+  
+</head>
+<body>
+<header>
+  <div>
+    <h1>Ratio de série</h1>
+    <div class="sub">Entre tes stocks (rouleaux) par couleur, choisis une <b>couleur base</b>, et obtiens ratios + packs conseillés. Les données se sauvegardent automatiquement.</div>
+  </div>
+  <div class="top-actions">
+    <button class="secondary" id="exportBtn">Exporter</button>
+    <button class="secondary" id="importBtn">Importer</button>
+    <button class="danger" id="resetBtn">Reset</button>
+  </div>
+</header>
+
+<div class="wrap">
+  <div class="grid">
+
+    <div class="card">
+      <h2>1) Stocks</h2>
+      <div class="small">Tu peux ajouter/supprimer des couleurs. Clique “Calculer” pour mettre à jour.</div>
+
+      <div class="row">
+        <button id="addColor">+ Ajouter couleur</button>
+        <button class="secondary" id="loadExample">Charger l’exemple</button>
+        <button class="secondary" id="calc">Calculer</button>
+      </div>
+
+      <div id="colors"><div class="row">
+      <input class="cname" type="text" placeholder="Couleur (ex: Noir)" value="Noir">
+      <input class="cqty" type="number" min="0" placeholder="Rouleaux" value="0">
+      <button class="secondary remove">Supprimer</button>
+    </div><div class="row">
+      <input class="cname" type="text" placeholder="Couleur (ex: Noir)" value="Gris">
+      <input class="cqty" type="number" min="0" placeholder="Rouleaux" value="0">
+      <button class="secondary remove">Supprimer</button>
+    </div><div class="row">
+      <input class="cname" type="text" placeholder="Couleur (ex: Noir)" value="Bordeaux">
+      <input class="cqty" type="number" min="0" placeholder="Rouleaux" value="0">
+      <button class="secondary remove">Supprimer</button>
+    </div></div>
+
+      <div class="row">
+        <label>Couleur base</label>
+        <select id="base"><option value="Noir">Noir</option><option value="Gris">Gris</option><option value="Bordeaux">Bordeaux</option></select>
+
+        <label style="margin-left:6px">Pack à proposer (base)</label>
+        <input id="packBase" type="number" min="1" value="1">
+      </div>
+
+      <div class="small">
+        <span class="pill">Rappel</span>
+        Ratio = (stock couleur) / (stock base). Le pack conseille des quantités arrondies (faciles à vendre).
+      </div>
+    </div>
+
+    <div class="card">
+      <h2>2) Résultats</h2>
+
+      <div class="kpi">
+        <div class="box">
+          <div class="n" id="kpiSeries">—</div>
+          <div class="t">Séries complètes possibles (1 rouleau de chaque)</div>
+        </div>
+        <div class="box">
+          <div class="n" id="kpiBase">—</div>
+          <div class="t">Couleur base sélectionnée</div>
+        </div>
+        <div class="box">
+          <div class="n" id="kpiBottleneck">—</div>
+          <div class="t">Couleur la plus limitante (min stock global)</div>
+        </div>
+      </div>
+
+      <h2 style="margin-top:14px">Ratios &amp; pack conseillé</h2>
+      <div class="small">Change “Pack base” (1, 2, 5…) pour générer des packs adaptés.</div>
+      <div id="out"><div class="small">Entre tes stocks, puis clique “Calculer”.</div></div>
+    </div>
+
+  </div>
+</div>
+
+<div class="toast" id="toast">Réinitialisé</div>
+
+
+
+
+</body></html>
+------MultipartBoundary--Iot4O5GZpF1YQUswstJEwYulzSZxV6auD3wiszEpNY----
+Content-Type: text/css
+Content-Transfer-Encoding: binary
+Content-Location: cid:css-483b427d-5deb-43b3-9581-3ee1ed8b9c93@mhtml.blink
+
+@charset "utf-8";
+
+:root { --bg: #0b1220; --card: #121b2d; --muted: #8aa0c6; --text: #e8f0ff; --accent: #4cc9f0; --warn: #ffd166; }
+
+body { margin: 0px; font-family: system-ui, -apple-system, "Segoe UI", Roboto, Ubuntu, "Helvetica Neue", Arial; background: linear-gradient(rgb(6, 10, 20), rgb(11, 18, 32) 35%, rgb(6, 10, 20)); color: var(--text); }
+
+header { padding: 18px 16px 8px; display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; }
+
+h1 { margin: 0px; font-size: 18px; letter-spacing: 0.2px; }
+
+.sub { color: var(--muted); font-size: 12px; margin-top: 6px; line-height: 1.4; }
+
+.wrap { padding: 12px 16px 28px; max-width: 980px; margin: 0px auto; }
+
+.grid { display: grid; grid-template-columns: 1fr; gap: 12px; }
+
+@media (min-width: 900px) {
+  .grid { grid-template-columns: 1.15fr 0.85fr; }
+}
+
+.card { background: rgba(18, 27, 45, 0.88); border: 1px solid rgba(76, 201, 240, 0.14); border-radius: 14px; padding: 14px; box-shadow: rgba(0, 0, 0, 0.25) 0px 10px 30px; }
+
+.card h2 { margin: 0px 0px 10px; font-size: 14px; color: var(--accent); }
+
+.row { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; margin: 10px 0px; }
+
+label { font-size: 12px; color: var(--muted); }
+
+input[type="number"], input[type="text"], select { background: rgb(12, 20, 38); border: 1px solid rgba(138, 160, 198, 0.25); color: var(--text); border-radius: 10px; padding: 10px; font-size: 14px; outline: none; min-width: 120px; }
+
+input[type="number"] { width: 120px; }
+
+button { background: linear-gradient(90deg, rgb(76, 201, 240), rgb(72, 149, 239)); border: none; color: rgb(6, 16, 28); font-weight: 700; border-radius: 12px; padding: 10px 12px; font-size: 14px; cursor: pointer; }
+
+button.secondary { background: transparent; color: var(--text); border: 1px solid rgba(138, 160, 198, 0.35); font-weight: 600; }
+
+button.danger { background: transparent; color: rgb(255, 123, 123); border: 1px solid rgba(255, 123, 123, 0.35); font-weight: 700; }
+
+button:active { transform: scale(0.99); }
+
+table { width: 100%; border-collapse: separate; border-spacing: 0px 8px; font-size: 13px; }
+
+th { color: var(--muted); font-weight: 600; text-align: left; font-size: 12px; }
+
+td { background: rgb(12, 20, 38); border-top: 1px solid rgba(138, 160, 198, 0.18); border-bottom: 1px solid rgba(138, 160, 198, 0.18); border-image: initial; padding: 10px; border-left: none; border-right: none; }
+
+tr td:first-child { border-left: 1px solid rgba(138, 160, 198, 0.18); border-radius: 10px 0px 0px 10px; }
+
+tr td:last-child { border-right: 1px solid rgba(138, 160, 198, 0.18); border-radius: 0px 10px 10px 0px; }
+
+.pill { display: inline-block; background: rgba(255, 209, 102, 0.14); border: 1px solid rgba(255, 209, 102, 0.25); color: var(--warn); padding: 3px 8px; border-radius: 999px; font-size: 12px; }
+
+.small { font-size: 12px; color: var(--muted); line-height: 1.45; }
+
+.mono { font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace; }
+
+.kpi { display: flex; gap: 10px; flex-wrap: wrap; }
+
+.kpi .box { flex: 1 1 0%; min-width: 150px; background: rgb(12, 20, 38); border: 1px solid rgba(138, 160, 198, 0.18); border-radius: 12px; padding: 10px; }
+
+.kpi .n { font-size: 20px; font-weight: 800; color: var(--accent); }
+
+.kpi .t { font-size: 11px; color: var(--muted); }
+
+.top-actions { display: flex; gap: 8px; flex-wrap: wrap; justify-content: flex-end; }
+
+.toast { position: fixed; left: 50%; bottom: 18px; transform: translateX(-50%); background: rgb(12, 20, 38); border: 1px solid rgba(138, 160, 198, 0.25); color: var(--text); padding: 10px 12px; border-radius: 12px; box-shadow: rgba(0, 0, 0, 0.35) 0px 10px 30px; opacity: 0; pointer-events: none; transition: opacity 0.2s; }
+
+.toast.show { opacity: 1; }
+------MultipartBoundary--Iot4O5GZpF1YQUswstJEwYulzSZxV6auD3wiszEpNY------
