@@ -21,65 +21,72 @@
     .group{display:flex; flex-direction:column; gap:6px}
     .two{display:grid; grid-template-columns:1fr 1fr; gap:12px}
     @media (max-width:900px){ .two{grid-template-columns:1fr} }
+    .pill{display:inline-block; padding:6px 10px; border:1px solid #ddd; border-radius:999px; font-size:13px}
   </style>
 </head>
 
 <body>
   <h1>Calcul de séries par rouleaux</h1>
   <div class="muted">
-    1) Saisis le stock. 2) Définis le patron (manuel ou auto). 3) Calcule les séries jusqu’à épuisement total.
-    Si une couleur finit, on continue avec les autres. La dernière série peut être incomplète.
+    Tu saisis le stock. Tu choisis une couleur base + un nombre base (1 ou 2).
+    L’auto calcule une <b>série réaliste</b> (petits nombres) selon les ratios du stock, puis l’app répète jusqu’à épuisement.
   </div>
 
   <div class="two">
     <div class="card">
       <h3 style="margin:0 0 10px">1) Stock (rouleaux)</h3>
       <div class="row">
-        <button id="addStock">+ Ajouter couleur</button>
-        <button id="clearAll" class="danger">Vider tout</button>
+        <button id="addStock" type="button">+ Ajouter couleur</button>
+        <button id="clearAll" type="button" class="danger">Vider tout</button>
       </div>
       <div id="stockWrap" style="margin-top:10px"></div>
-      <div class="muted">Ex: Noir = 12 signifie 12 rouleaux Noir.</div>
+      <div class="muted">Astuce: évite les espaces dans les noms (ex: “BleuFoncé” ou “Bleu Foncé” mais reste cohérent).</div>
     </div>
 
     <div class="card">
-      <h3 style="margin:0 0 10px">2) Patron de série (manuel + auto)</h3>
+      <h3 style="margin:0 0 10px">2) Patron (manuel + auto)</h3>
 
       <div class="row" style="margin-bottom:10px">
         <div class="group">
           <label>Couleur base (pour auto)</label>
-          <select id="baseColor" style="min-width:240px"></select>
+          <select id="baseColor" style="min-width:220px"></select>
         </div>
 
         <div class="group">
-          <label>Base x (1 / 2 / 3 ...)</label>
+          <label>Nombre base (1 / 2)</label>
           <input id="baseFactor" type="number" min="1" step="1" value="1" style="width:140px" />
         </div>
 
         <div class="group">
+          <label>Max par couleur</label>
+          <input id="maxPerColor" type="number" min="1" step="1" value="10" style="width:140px" />
+        </div>
+
+        <div class="group">
           <label>&nbsp;</label>
-          <button id="autoFill">Auto-remplir patron</button>
+          <button id="autoFill" type="button">Auto-remplir patron</button>
         </div>
       </div>
 
       <div class="row" style="margin-bottom:10px">
-        <button id="addPattern">+ Ajouter ligne patron</button>
-        <button id="copyStockToPattern">Copier stock → patron</button>
-        <button id="clearPattern">Vider patron</button>
+        <button id="addPattern" type="button">+ Ajouter case au patron</button>
+        <button id="copyStockToPattern" type="button">Copier stock → patron</button>
+        <button id="clearPattern" type="button">Vider patron</button>
+      </div>
+
+      <div class="muted" style="margin:6px 0">
+        <span class="pill">Manuel</span> : tu choisis la couleur (menu) + quantité.  
+        <span class="pill">Auto</span> : calcule à partir des ratios stock/base pour obtenir une série “vendeuse”.
       </div>
 
       <div id="patternWrap"></div>
-
-      <div class="muted" style="margin-top:8px">
-        Le calcul utilise <b>exactement</b> le patron affiché. Les couleurs du patron sont choisies depuis le stock (menu déroulant).
-      </div>
     </div>
   </div>
 
   <div class="card">
     <div class="row">
-      <button id="genAll">Calculer les séries</button>
-      <button id="clearResults">Effacer résultats</button>
+      <button id="genAll" type="button">Calculer les séries</button>
+      <button id="clearResults" type="button">Effacer résultats</button>
     </div>
     <div id="status" style="margin-top:10px"></div>
   </div>
@@ -106,7 +113,6 @@
 <script>
   const $ = (id)=>document.getElementById(id);
 
-  // ✅ Pas d'historique: tout repart à zéro à chaque ouverture
   const state = {
     stock: [
       { name: "Noir", qty: 0 },
@@ -114,11 +120,11 @@
       { name: "Kaki", qty: 0 },
       { name: "Beige", qty: 0 },
     ],
-    pattern: [],   // {name, qty}
-    series: []     // {index, allocations}
+    pattern: [], // {name, qty}
+    series: []
   };
 
-  function clampInt(v){ return Math.max(0, Math.floor(Number(v)||0)); }
+  const clampInt = (v)=> Math.max(0, Math.floor(Number(v)||0));
 
   function normalize(){
     state.stock = (state.stock||[])
@@ -127,7 +133,7 @@
 
     state.pattern = (state.pattern||[])
       .map(x=>({ name:(x.name||"").trim(), qty: clampInt(x.qty) }))
-      .filter(x=>x.name.length>0 || x.qty>0); // on garde lignes utiles
+      .filter(x=>x.name.length>0 || x.qty>0);
   }
 
   function setStatus(msg, danger){
@@ -143,28 +149,32 @@
   }
 
   function stockNames(){
-    return state.stock.map(s=>s.name).filter(n=>n.length>0);
+    return state.stock.map(s=>s.name).filter(Boolean);
   }
 
   function renderBaseSelector(){
     const sel = $("baseColor");
-    const keep = sel.value || "__AUTO__";
+    const keep = sel.value || "";
 
     sel.innerHTML = "";
-    const optAuto = document.createElement("option");
-    optAuto.value = "__AUTO__";
-    optAuto.textContent = "Auto (couleur la plus faible > 0)";
-    sel.appendChild(optAuto);
+    const names = stockNames();
 
-    stockNames().forEach(n=>{
+    if(names.length===0){
+      const opt = document.createElement("option");
+      opt.value = "";
+      opt.textContent = "Ajoute une couleur…";
+      sel.appendChild(opt);
+      return;
+    }
+
+    names.forEach(n=>{
       const opt = document.createElement("option");
       opt.value = n;
       opt.textContent = n;
       sel.appendChild(opt);
     });
 
-    const values = Array.from(sel.options).map(o=>o.value);
-    sel.value = values.includes(keep) ? keep : "__AUTO__";
+    sel.value = names.includes(keep) ? keep : names[0];
   }
 
   function renderStock(){
@@ -180,16 +190,21 @@
       name.value = c.name;
       name.placeholder = "Couleur";
       name.style.width = "220px";
-      name.oninput = ()=>{ state.stock[i].name = name.value; renderAll(); };
+      name.onchange = ()=>{
+        state.stock[i].name = name.value;
+        normalize();
+        renderAll(); // on rerend pour mettre à jour dropdowns
+      };
 
       const qty = document.createElement("input");
       qty.type="number"; qty.min="0"; qty.step="1";
       qty.value = c.qty;
       qty.placeholder="Rouleaux";
       qty.style.width="160px";
-      qty.oninput = ()=>{ state.stock[i].qty = qty.value; };
+      qty.onchange = ()=>{ state.stock[i].qty = qty.value; };
 
       const del = document.createElement("button");
+      del.type="button";
       del.textContent="Supprimer";
       del.className="danger";
       del.onclick = ()=>{
@@ -205,7 +220,7 @@
     });
   }
 
-  // ✅ Patron: couleur choisie via dropdown basé sur le stock
+  // Patron: dropdown couleur (stock) + qty
   function renderPattern(){
     const wrap = $("patternWrap");
     wrap.innerHTML = "";
@@ -213,7 +228,7 @@
     const names = stockNames();
 
     if(state.pattern.length===0){
-      wrap.innerHTML = `<div class="muted">Patron vide. Clique “Copier stock → patron” ou “+ Ajouter ligne patron”.</div>`;
+      wrap.innerHTML = `<div class="muted">Patron vide. Clique “Copier stock → patron” ou “+ Ajouter case au patron”.</div>`;
       return;
     }
 
@@ -245,9 +260,10 @@
       qty.value = p.qty;
       qty.placeholder="Par série";
       qty.style.width="160px";
-      qty.oninput = ()=>{ state.pattern[i].qty = qty.value; };
+      qty.onchange = ()=>{ state.pattern[i].qty = qty.value; };
 
       const del = document.createElement("button");
+      del.type="button";
       del.textContent="Supprimer";
       del.className="danger";
       del.onclick = ()=>{
@@ -271,39 +287,61 @@
     setStatus("Patron créé à partir du stock ✅ (quantités = 0)", false);
   }
 
-  // ✅ Auto-remplir: cible = baseQty * factor, patron = min(stock, cible) pour chaque couleur active
+  // ✅ NOUVELLE LOGIQUE AUTO (série réaliste)
+  // base = 1 ou 2
+  // patron[color] = round((stock[color] / stock[baseColor]) * base)
+  // puis on plafonne à maxPerColor et au stock disponible.
+  // La couleur base = base (plafonnée au stock base)
   function autoFillPattern(){
     normalize();
-    const factor = Math.max(1, Math.floor(Number($("baseFactor").value)||1));
-    const baseChoice = $("baseColor").value;
-
-    const active = state.stock.filter(s=>s.qty>0);
-    if(active.length===0){
-      setStatus("Ajoute au moins une couleur avec un stock > 0.", true);
+    const names = stockNames();
+    if(names.length===0){
+      setStatus("Ajoute au moins une couleur dans le stock.", true);
       return;
     }
 
-    let baseQty = 0;
-    if(baseChoice === "__AUTO__"){
-      baseQty = Math.min(...active.map(x=>x.qty));
-    }else{
-      const found = active.find(x=>x.name === baseChoice);
-      if(!found){
-        setStatus("Choisis une couleur base qui a un stock > 0, ou Auto.", true);
-        return;
-      }
-      baseQty = found.qty;
+    const baseColor = $("baseColor").value;
+    const base = Math.max(1, Math.floor(Number($("baseFactor").value)||1));
+    const maxPer = Math.max(1, Math.floor(Number($("maxPerColor").value)||10));
+
+    const baseObj = state.stock.find(s=>s.name===baseColor);
+    const baseStock = baseObj ? baseObj.qty : 0;
+
+    if(baseStock <= 0){
+      setStatus("La couleur base doit avoir un stock > 0.", true);
+      return;
     }
 
-    const target = baseQty * factor;
+    const active = state.stock.filter(s=>s.qty>0);
 
-    state.pattern = active.map(s=>({
-      name: s.name,
-      qty: Math.min(s.qty, target)
-    }));
+    // calc
+    const pat = [];
+    active.forEach(s=>{
+      let q = 0;
+      if(s.name === baseColor){
+        q = base;
+      } else {
+        q = Math.round((s.qty / baseStock) * base);
+      }
 
+      // plafonds
+      q = Math.min(q, maxPer);
+      q = Math.min(q, s.qty);
+
+      // IMPORTANT: on garde 0 possible (si ratio très faible)
+      pat.push({name: s.name, qty: q});
+    });
+
+    // option: trier base en premier puis le reste (facile à lire)
+    pat.sort((a,b)=>{
+      if(a.name===baseColor) return -1;
+      if(b.name===baseColor) return 1;
+      return a.name.localeCompare(b.name);
+    });
+
+    state.pattern = pat;
     renderAll();
-    setStatus(`Patron auto rempli ✅ (cible = ${target})`, false);
+    setStatus(`Patron auto rempli ✅ (base ${baseColor} = ${base}, max/couleur=${maxPer})`, false);
   }
 
   function computeSeries(){
@@ -316,7 +354,7 @@
       return;
     }
 
-    // vérif: pas de lignes sans couleur
+    // pas de ligne sans couleur si qty > 0
     const missing = state.pattern.filter(p=>!p.name && p.qty>0);
     if(missing.length){
       renderAll();
@@ -328,21 +366,20 @@
     const rem = {};
     state.stock.forEach(s=> rem[s.name] = s.qty);
 
-    // patron fixe (objet)
+    // patron fixe
     const pat = {};
     state.pattern.forEach(p=>{
-      if(p.name) pat[p.name] = Math.max(0, Math.floor(Number(p.qty)||0));
+      if(p.name) pat[p.name] = clampInt(p.qty);
     });
 
-    // boucle: on applique le patron, si une couleur est finie → take=0, et on continue
-    for(let guard=0; guard<10000; guard++){
+    for(let guard=0; guard<20000; guard++){
       if(totalObj(rem)===0) break;
 
       const alloc = {};
       let tookAny = false;
 
       for(const [color, need0] of Object.entries(pat)){
-        const need = Math.max(0, Math.floor(Number(need0)||0));
+        const need = clampInt(need0);
         if(need === 0) continue;
 
         const avail = rem[color] ?? 0;
@@ -354,7 +391,7 @@
         if(take>0) tookAny = true;
       }
 
-      // si le patron ne prend plus rien mais il reste du stock ailleurs → dernière série "reste"
+      // si le patron ne prend plus rien mais il reste du stock ailleurs => dernière série "reste"
       if(!tookAny){
         const last = {};
         for(const [c,q] of Object.entries(rem)){
@@ -445,7 +482,7 @@
     renderReste();
   }
 
-  // UI handlers
+  // Handlers
   $("addStock").onclick = ()=>{
     state.stock.push({name:"", qty:0});
     renderAll();
