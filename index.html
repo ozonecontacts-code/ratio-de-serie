@@ -17,44 +17,36 @@
     th{background:#f7f7f7; position:sticky; top:0}
     .danger{color:#b00020}
     .ok{color:#0b6b2a}
-    .two{display:grid; grid-template-columns:1fr 1fr; gap:12px}
-    @media (max-width:900px){ .two{grid-template-columns:1fr} }
   </style>
 </head>
 <body>
   <h1>Calcul de séries par rouleaux</h1>
   <div class="muted">
-    Tu saisis le stock (rouleaux) + le patron de série (quantité par série). L’app répète le patron jusqu’à épuisement total,
-    même si la dernière série est incomplète (ex: 3 couleurs).
+    Tu saisis uniquement le stock (rouleaux) par couleur. L’app calcule automatiquement le <b>patron</b> (la 1ère série),
+    puis répète les séries jusqu’à épuisement. La dernière série peut être incomplète (3 couleurs, 2 couleurs, etc.).
   </div>
 
-  <div class="two">
-    <div class="card">
-      <h3 style="margin:0 0 10px">1) Stock (rouleaux)</h3>
-      <div class="row">
-        <button id="addStock">+ Ajouter couleur</button>
-        <button id="save">Enregistrer</button>
-        <button id="reset" class="danger">Reset</button>
-      </div>
-      <div id="stockWrap" style="margin-top:10px"></div>
-      <div class="muted">Ex: Noir = 12 signifie 12 rouleaux Noir.</div>
+  <div class="card">
+    <h3 style="margin:0 0 10px">1) Stock (rouleaux)</h3>
+    <div class="row">
+      <button id="addStock">+ Ajouter couleur</button>
+      <button id="clearAll" class="danger">Vider tout</button>
     </div>
-
-    <div class="card">
-      <h3 style="margin:0 0 10px">2) Patron de série (par série)</h3>
-      <div class="muted" style="margin-bottom:10px">
-        Mets combien de rouleaux de chaque couleur doit contenir <b>UNE</b> série (ex: Noir 5, Gris 5, Kaki 3, Beige 3).
-      </div>
-      <div id="patternWrap"></div>
-    </div>
+    <div id="stockWrap" style="margin-top:10px"></div>
+    <div class="muted">Ex: Noir = 12 signifie 12 rouleaux Noir.</div>
   </div>
 
   <div class="card">
     <div class="row">
-      <button id="genAll">Générer toutes les séries</button>
-      <button id="clear">Effacer résultats</button>
+      <button id="genAll">Calculer les séries</button>
+      <button id="clearResults">Effacer résultats</button>
     </div>
     <div id="status" style="margin-top:10px"></div>
+  </div>
+
+  <div class="card">
+    <h3 style="margin:0 0 8px">Patron automatique (1ère série)</h3>
+    <div id="patternView" class="muted">—</div>
   </div>
 
   <div class="card">
@@ -79,55 +71,22 @@
 <script>
   const $ = (id)=>document.getElementById(id);
 
+  // ✅ IMPORTANT: aucun historique, tu repars de zéro à chaque ouverture
   const state = {
-    // stock: rouleaux dispo
     stock: [
-      { name: "Noir", qty: 12 },
-      { name: "Gris", qty: 7 },
-      { name: "Kaki", qty: 3 },
-      { name: "Beige", qty: 20 },
-      { name: "Bordeaux", qty: 0 },
+      { name: "Noir", qty: 0 },
+      { name: "Gris", qty: 0 },
+      { name: "Kaki", qty: 0 },
+      { name: "Beige", qty: 0 },
     ],
-    // pattern: rouleaux par série (patron)
-    pattern: {
-      "Noir": 5,
-      "Gris": 5,
-      "Kaki": 3,
-      "Beige": 3,
-      "Bordeaux": 0
-    },
-    series: [] // {index, allocations:{color: qtyTaken}}
+    series: [],
+    pattern: null // {color: qty} calculée
   };
-
-  function load(){
-    const raw = localStorage.getItem("series_rouleaux_v1");
-    if(!raw) return;
-    try{
-      const p = JSON.parse(raw);
-      if(p?.stock) state.stock = p.stock;
-      if(p?.pattern) state.pattern = p.pattern;
-      if(Array.isArray(p?.series)) state.series = p.series;
-    }catch(e){}
-  }
-  function save(){
-    localStorage.setItem("series_rouleaux_v1", JSON.stringify({
-      stock: state.stock,
-      pattern: state.pattern,
-      series: state.series
-    }));
-  }
 
   function normalize(){
     state.stock = (state.stock||[])
       .map(x=>({ name:(x.name||"").trim(), qty: Math.max(0, Math.floor(Number(x.qty)||0)) }))
       .filter(x=>x.name.length>0);
-
-    // garder pattern uniquement pour les couleurs existantes
-    const next = {};
-    state.stock.forEach(s=>{
-      next[s.name] = Math.max(0, Math.floor(Number(state.pattern?.[s.name])||0));
-    });
-    state.pattern = next;
   }
 
   function setStatus(msg, danger){
@@ -145,7 +104,7 @@
       const name = document.createElement("input");
       name.value = c.name;
       name.placeholder = "Couleur";
-      name.style.width = "220px";
+      name.style.width = "240px";
       name.oninput = ()=>{ state.stock[i].name = name.value; };
 
       const qty = document.createElement("input");
@@ -159,10 +118,9 @@
       del.textContent="Supprimer";
       del.className="danger";
       del.onclick = ()=>{
-        const removed = state.stock[i]?.name;
         state.stock.splice(i,1);
-        if(removed) delete state.pattern[removed];
-        normalize(); save(); renderAll();
+        normalize();
+        renderAll();
       };
 
       row.appendChild(name);
@@ -172,128 +130,102 @@
     });
   }
 
-  function renderPattern(){
-    const wrap = $("patternWrap");
-    wrap.innerHTML = "";
-
-    state.stock.forEach((c)=>{
-      const row = document.createElement("div");
-      row.className = "row";
-      row.style.margin = "8px 0";
-
-      const label = document.createElement("div");
-      label.style.width="220px";
-      label.textContent = c.name;
-
-      const val = document.createElement("input");
-      val.type="number"; val.min="0"; val.step="1";
-      val.value = state.pattern[c.name] ?? 0;
-      val.placeholder="Par série";
-      val.style.width="160px";
-      val.oninput = ()=>{ state.pattern[c.name] = val.value; };
-
-      row.appendChild(label);
-      row.appendChild(val);
-      wrap.appendChild(row);
-    });
-
-    const note = document.createElement("div");
-    note.className="muted";
-    note.style.marginTop="10px";
-    note.innerHTML = "Astuce: Si une couleur ne doit pas être dans la série, mets 0.";
-    wrap.appendChild(note);
+  function totalStock(obj){
+    return Object.values(obj).reduce((a,b)=>a+(Number(b)||0),0);
   }
 
-  function remainingStock(){
-    const rem = {};
-    state.stock.forEach(s=> rem[s.name] = Math.max(0, Math.floor(Number(s.qty)||0)));
-    // retrancher les séries déjà générées
-    state.series.forEach(sr=>{
-      for(const [k,v] of Object.entries(sr.allocations)){
-        rem[k] = Math.max(0, (rem[k] ?? 0) - v);
-      }
-    });
-    return rem;
+  // ✅ Patron automatique = 1ère série calculée ainsi :
+  // - On prend uniquement les couleurs dont stock > 0
+  // - On prend la plus petite quantité parmi ces couleurs (minStock)
+  // - Patron = pour chaque couleur active : minStock
+  // => Exemple: Noir 12, Gris 7, Kaki 3, Beige 20 -> minStock=3 -> Patron: 3 de chaque couleur active
+  //
+  // Si tu veux une autre règle (ex: limiter à 5 max), je te l’ajuste.
+  function computeAutoPatternFromStock(){
+    const active = state.stock.filter(s=>s.qty>0);
+    if(active.length===0) return null;
+
+    const minStock = Math.min(...active.map(x=>x.qty));
+    const pat = {};
+    active.forEach(x=> { pat[x.name] = minStock; });
+    return pat;
   }
 
-  function total(rem){ return Object.values(rem).reduce((a,b)=>a+b,0); }
-
-  function patternTotal(){
-    return Object.values(state.pattern).reduce((a,b)=>a+Math.max(0,Math.floor(Number(b)||0)),0);
-  }
-
-  // ✅ coeur: répéter le patron jusqu’à épuisement total
-  // - Série complète si toutes les couleurs du patron peuvent être prélevées
-  // - Quand une couleur du patron est insuffisante, on met ce qu’il reste (0..pattern) et on continue
-  // - On s’arrête seulement quand TOUTES les couleurs sont à 0
-  function generateAll(){
+  function computeSeries(){
     normalize();
-    const patTot = patternTotal();
-    if(patTot <= 0){
-      setStatus("Ton patron de série est vide (tout à 0). Mets des valeurs > 0 dans le patron.", true);
+    state.series = [];
+    state.pattern = null;
+
+    const pat = computeAutoPatternFromStock();
+    if(!pat){
+      renderAll();
+      setStatus("Ajoute au moins une couleur avec un stock > 0.", true);
       return;
     }
+    state.pattern = pat;
 
-    // on part du stock restant (si séries existantes)
-    let rem = remainingStock();
+    // Stock restant
+    const rem = {};
+    state.stock.forEach(s=> rem[s.name] = s.qty);
 
-    // boucle sécurité
-    const results = [];
+    // Boucle: on applique le patron, mais si une couleur n’a plus assez,
+    // on prend ce qui reste (0..pat) et on continue jusqu’à épuisement total.
     for(let guard=0; guard<10000; guard++){
-      if(total(rem) === 0) break;
+      if(totalStock(rem)===0) break;
 
       const alloc = {};
-      let takenAny = false;
+      let tookAny = false;
 
-      // appliquer le patron
-      for(const color of Object.keys(state.pattern)){
-        const need = Math.max(0, Math.floor(Number(state.pattern[color])||0));
-        if(need === 0) continue;
-
+      for(const [color, need0] of Object.entries(pat)){
+        const need = Math.max(0, Math.floor(Number(need0)||0));
         const avail = rem[color] ?? 0;
         const take = Math.min(avail, need);
-        if(take > 0) takenAny = true;
-        alloc[color] = take;      // peut être 0 si fini
+        alloc[color] = take;     // peut être 0 si couleur finie
         rem[color] = avail - take;
+        if(take>0) tookAny = true;
       }
 
-      // Si aucune couleur du patron n’a pu être prise, ça veut dire:
-      // - il reste du stock dans des couleurs qui ne sont PAS dans le patron (ou patron=0 pour elles)
-      // => on fait une "série reste" avec tout ce stock (pour ne pas bloquer)
-      if(!takenAny){
-        const restAlloc = {};
+      // Si plus rien n’est pris via le patron mais il reste du stock dans d’autres couleurs
+      // (ex: tu as ajouté une couleur qui n’était pas active au moment du patron),
+      // on met tout le reste dans une dernière série.
+      if(!tookAny){
+        const last = {};
         for(const [c,q] of Object.entries(rem)){
-          if(q>0){ restAlloc[c]=q; rem[c]=0; }
+          if(q>0){ last[c]=q; rem[c]=0; }
         }
-        results.push(restAlloc);
+        state.series.push({index: state.series.length+1, allocations:last});
         break;
       }
 
-      results.push(alloc);
+      state.series.push({index: state.series.length+1, allocations:alloc});
     }
 
-    // ajouter au state.series
-    results.forEach(a=>{
-      state.series.push({ index: state.series.length + 1, allocations: a });
-    });
-
-    save();
     renderAll();
-    setStatus(`${results.length} série(s) générée(s) ✅ (jusqu’à épuisement total)`, false);
+    setStatus(`Séries calculées ✅ (${state.series.length})`, false);
   }
 
   function allColorsUnion(){
     const set = new Set();
     state.stock.forEach(s=>set.add(s.name));
-    Object.keys(state.pattern).forEach(k=>set.add(k));
-    state.series.forEach(sr=>Object.keys(sr.allocations).forEach(k=>set.add(k)));
+    if(state.pattern) Object.keys(state.pattern).forEach(k=>set.add(k));
+    state.series.forEach(sr=>Object.keys(sr.allocations||{}).forEach(k=>set.add(k)));
     return Array.from(set);
+  }
+
+  function renderPattern(){
+    const el = $("patternView");
+    if(!state.pattern){
+      el.textContent = "—";
+      return;
+    }
+    const parts = Object.entries(state.pattern).map(([k,v])=>`${k}: ${v}`).join(" • ");
+    el.innerHTML = `<b>${parts}</b>`;
   }
 
   function renderList(){
     const el = $("list");
     if(state.series.length===0){
-      el.innerHTML = `<div class="muted">Aucune série générée.</div>`;
+      el.innerHTML = `<div class="muted">Aucune série.</div>`;
       return;
     }
     el.innerHTML = state.series.map(sr=>{
@@ -328,14 +260,22 @@
   }
 
   function renderReste(){
-    const rem = remainingStock();
+    // recalcul du reste = stock initial - allocations
+    const rem = {};
+    state.stock.forEach(s=> rem[s.name] = s.qty);
+    state.series.forEach(sr=>{
+      for(const [c,v] of Object.entries(sr.allocations||{})){
+        rem[c] = Math.max(0, (rem[c]??0) - (Number(v)||0));
+      }
+    });
+
     const cols = allColorsUnion();
     const t = $("restTable");
     let html = "<tr>";
     cols.forEach(c=> html += `<th>${c}</th>`);
     html += "<th>Total</th></tr><tr>";
     cols.forEach(c=> html += `<td>${rem[c] ?? 0}</td>`);
-    html += `<td><b>${total(rem)}</b></td></tr>`;
+    html += `<td><b>${totalStock(rem)}</b></td></tr>`;
     t.innerHTML = html;
   }
 
@@ -352,26 +292,25 @@
     state.stock.push({name:"", qty:0});
     renderAll();
   };
-  $("save").onclick = ()=>{
-    normalize();
-    save();
-    renderAll();
-    setStatus("Enregistré ✅", false);
-  };
-  $("reset").onclick = ()=>{
-    localStorage.removeItem("series_rouleaux_v1");
-    location.reload();
-  };
-  $("genAll").onclick = ()=> generateAll();
-  $("clear").onclick = ()=>{
+
+  $("clearAll").onclick = ()=>{
+    state.stock = [];
     state.series = [];
-    save();
+    state.pattern = null;
+    renderAll();
+    setStatus("Tout vidé ✅", false);
+  };
+
+  $("genAll").onclick = ()=> computeSeries();
+
+  $("clearResults").onclick = ()=>{
+    state.series = [];
+    state.pattern = null;
     renderAll();
     setStatus("Résultats effacés ✅", false);
   };
 
   // init
-  load();
   normalize();
   renderAll();
 </script>
