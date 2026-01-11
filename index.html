@@ -1,379 +1,338 @@
 <!doctype html>
 <html lang="fr">
 <head>
-  <meta charset="utf-8"/>
-  <meta name="viewport" content="width=device-width, initial-scale=1"/>
-  <meta name="theme-color" content="#0b1220"/>
-  <link rel="manifest" href="manifest.json"/>
-  <title>Ratio de série</title>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Ration Série</title>
   <style>
-    :root{--bg:#0b1220;--card:#121b2d;--muted:#8aa0c6;--text:#e8f0ff;--accent:#4cc9f0;--good:#2ee59d;--warn:#ffd166;}
-    body{margin:0;font-family:system-ui,-apple-system,Segoe UI,Roboto,Ubuntu,"Helvetica Neue",Arial;
-         background:linear-gradient(180deg,#060a14,#0b1220 35%,#060a14);color:var(--text);}
-    header{padding:18px 16px 6px 16px;}
-    h1{margin:0;font-size:18px;letter-spacing:.2px}
-    .sub{color:var(--muted);font-size:12px;margin-top:6px;line-height:1.4}
-    .wrap{padding:12px 16px 28px 16px;max-width:980px;margin:0 auto;}
-    .grid{display:grid;grid-template-columns:1fr;gap:12px}
-    @media(min-width:900px){.grid{grid-template-columns:1.12fr .88fr}}
-    .card{background:rgba(18,27,45,.88);border:1px solid rgba(76,201,240,.14);border-radius:14px;padding:14px;box-shadow:0 10px 30px rgba(0,0,0,.25)}
-    .card h2{margin:0 0 10px 0;font-size:14px;color:var(--accent)}
-    .row{display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin:10px 0}
-    label{font-size:12px;color:var(--muted)}
-    input[type="number"], input[type="text"], select{
-      background:#0c1426;border:1px solid rgba(138,160,198,.25);color:var(--text);
-      border-radius:10px;padding:10px 10px;font-size:14px;outline:none;min-width:120px
-    }
-    input[type="number"]{width:120px}
-    button{
-      background:linear-gradient(90deg,#4cc9f0,#4895ef);border:none;color:#06101c;
-      font-weight:800;border-radius:12px;padding:10px 12px;font-size:14px;cursor:pointer
-    }
-    button.secondary{background:transparent;color:var(--text);border:1px solid rgba(138,160,198,.35);font-weight:650}
-    button:active{transform:scale(.99)}
-    table{width:100%;border-collapse:separate;border-spacing:0 8px;font-size:13px}
-    th{color:var(--muted);font-weight:650;text-align:left;font-size:12px}
-    td{background:#0c1426;border:1px solid rgba(138,160,198,.18);padding:10px;border-left:none;border-right:none;vertical-align:top}
-    tr td:first-child{border-left:1px solid rgba(138,160,198,.18);border-radius:10px 0 0 10px}
-    tr td:last-child{border-right:1px solid rgba(138,160,198,.18);border-radius:0 10px 10px 0}
-    .pill{display:inline-block;background:rgba(255,209,102,.14);border:1px solid rgba(255,209,102,.25);
-          color:var(--warn);padding:3px 8px;border-radius:999px;font-size:12px}
-    .pill.good{background:rgba(46,229,157,.10);border-color:rgba(46,229,157,.22);color:var(--good)}
-    .small{font-size:12px;color:var(--muted);line-height:1.45}
-    .mono{font-family:ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono","Courier New", monospace}
-    .kpi{display:flex;gap:10px;flex-wrap:wrap}
-    .kpi .box{flex:1;min-width:140px;background:#0c1426;border:1px solid rgba(138,160,198,.18);border-radius:12px;padding:10px}
-    .kpi .n{font-size:20px;font-weight:900;color:var(--accent)}
-    .kpi .t{font-size:11px;color:var(--muted)}
-    .hr{height:1px;background:rgba(138,160,198,.18);margin:12px 0}
-    .note{background:#0c1426;border:1px solid rgba(138,160,198,.18);border-radius:12px;padding:10px}
-    .right{float:right;color:var(--muted);font-size:11px}
+    body{font-family:system-ui,-apple-system,Segoe UI,Roboto,Arial; margin:16px; max-width:900px}
+    h1{font-size:20px;margin:0 0 12px}
+    .row{display:flex; gap:8px; align-items:center; flex-wrap:wrap}
+    input,button{font-size:16px; padding:10px; border:1px solid #ccc; border-radius:10px}
+    button{cursor:pointer}
+    .card{border:1px solid #ddd; border-radius:14px; padding:12px; margin:12px 0}
+    table{border-collapse:collapse; width:100%; overflow:auto}
+    th,td{border:1px solid #e3e3e3; padding:8px; text-align:center}
+    th{position:sticky; top:0; background:#f8f8f8}
+    .muted{color:#666; font-size:13px}
+    .danger{color:#b00020}
+    .ok{color:#0b6b2a}
+    .nowrap{white-space:nowrap}
   </style>
 </head>
 <body>
-<header>
-  <h1>Ratio de série</h1>
-  <div class="sub">
-    Entre tes stocks (rouleaux) par couleur, choisis une <b>couleur base</b>, puis l’app calcule :
-    (1) ratios, (2) un <b>pack en nombres entiers</b>, (3) le <b>nombre de packs possibles</b> et le <b>reste</b> par couleur.
-  </div>
-</header>
+  <h1>Ration Série</h1>
+  <div class="muted">Base et couleurs 100% variables • uniquement entiers • liste + tableau • reste visible</div>
 
-<div class="wrap">
-  <div class="grid">
-
-    <div class="card">
-      <h2>1) Stocks</h2>
-      <div class="small">Tu peux ajouter/supprimer des couleurs. Les données se sauvegardent automatiquement.</div>
-
-      <div class="row">
-        <button id="addColor">+ Ajouter couleur</button>
-        <button class="secondary" id="loadExample">Charger ton exemple</button>
-        <button class="secondary" id="clearAll">Vider</button>
-        <span class="right" id="saveState">—</span>
-      </div>
-
-      <div id="colors"></div>
-
-      <div class="row">
-        <label>Couleur base</label>
-        <select id="base"></select>
-
-        <label style="margin-left:6px">Base du pack</label>
-        <input id="packBase" type="number" min="1" value="1"/>
-
-        <label style="margin-left:6px">Arrondi</label>
-        <select id="roundMode">
-          <option value="nearest" selected>Au plus proche</option>
-          <option value="floor">Vers le bas</option>
-          <option value="ceil">Vers le haut</option>
-        </select>
-
-        <button id="calc">Calculer</button>
-      </div>
-
-      <div class="note small">
-        <span class="pill">Pack entier</span>
-        Pour éviter des valeurs comme <span class="mono">2,6</span>, l’app transforme les ratios en <b>quantités entières</b> (selon l’arrondi choisi),
-        puis calcule automatiquement <b>le nombre de packs possibles</b> et <b>le reste</b> par couleur.
-      </div>
-
-      <div class="row" style="margin-top:12px">
-        <button class="secondary" id="exportBtn">Exporter sauvegarde</button>
-        <button class="secondary" id="importBtn">Importer sauvegarde</button>
-      </div>
-      <input id="importFile" type="file" accept="application/json" style="display:none"/>
+  <div class="card">
+    <div class="row">
+      <label class="nowrap">Base (taille série)</label>
+      <input id="base" type="number" min="1" step="1" value="20" style="width:140px" />
+      <button id="addColor">+ Ajouter couleur</button>
+      <button id="save">Enregistrer</button>
+      <button id="reset" class="danger">Reset</button>
     </div>
-
-    <div class="card">
-      <h2>2) Résultats</h2>
-
-      <div class="kpi">
-        <div class="box">
-          <div class="n" id="kpiPacks">—</div>
-          <div class="t">Nombre de packs possibles (avec le pack entier)</div>
-        </div>
-        <div class="box">
-          <div class="n" id="kpiBase">—</div>
-          <div class="t">Couleur base & base du pack</div>
-        </div>
-        <div class="box">
-          <div class="n" id="kpiBottleneck">—</div>
-          <div class="t">Couleur limitante (dans ce pack)</div>
-        </div>
-      </div>
-
-      <div class="hr"></div>
-
-      <h2>Table (ratios, pack, reste)</h2>
-      <div class="small">Le “reste” = stock - (packs possibles × quantité pack). Pratique pour vendre le surplus séparément.</div>
-      <div id="out" style="margin-top:10px"></div>
-    </div>
-
+    <div id="colors" style="margin-top:10px"></div>
   </div>
-</div>
+
+  <div class="card">
+    <div class="row">
+      <button id="genOne">Générer 1 série</button>
+      <button id="genAll">Générer toutes les séries</button>
+      <button id="clearSeries">Effacer les séries</button>
+    </div>
+    <div class="muted" style="margin-top:8px">
+      Règle: on remplit une série en prenant d’abord les couleurs avec le plus de stock restant (greedy), sans décimales.
+    </div>
+    <div id="status" style="margin-top:10px"></div>
+  </div>
+
+  <div class="card">
+    <h3 style="margin:0 0 8px">Résultat (Liste)</h3>
+    <div id="list"></div>
+  </div>
+
+  <div class="card">
+    <h3 style="margin:0 0 8px">Résultat (Tableau)</h3>
+    <div style="overflow:auto">
+      <table id="table"></table>
+    </div>
+  </div>
+
+  <div class="card">
+    <h3 style="margin:0 0 8px">Reste (stock restant après séries)</h3>
+    <div style="overflow:auto">
+      <table id="restTable"></table>
+    </div>
+  </div>
 
 <script>
-  if ('serviceWorker' in navigator) {
-    window.addEventListener('load', () => navigator.serviceWorker.register('sw.js'));
-  }
+  const $ = (id)=>document.getElementById(id);
 
-  const colorsDiv = document.getElementById('colors');
-  const baseSel = document.getElementById('base');
-  const outDiv = document.getElementById('out');
-  const saveState = document.getElementById('saveState');
+  const state = {
+    base: 20,
+    colors: [
+      { name: "Noir", qty: 40 },
+      { name: "Gris", qty: 30 },
+      { name: "Kaki", qty: 15 },
+      { name: "Beige", qty: 10 }
+    ],
+    series: [] // each series: {index, allocations: {colorName: usedQty}, base}
+  };
 
-  function escapeHtml(s){
-    return (s||'').replaceAll('&','&amp;').replaceAll('<','&lt;').replaceAll('>','&gt;').replaceAll('"','&quot;').replaceAll("'","&#039;");
-  }
-
-  function makeRow(name='', qty='') {
-    const wrap = document.createElement('div');
-    wrap.className = 'row';
-    wrap.innerHTML = `
-      <input class="cname" type="text" placeholder="Couleur (ex: Noir)" value="${escapeHtml(name)}"/>
-      <input class="cqty" type="number" min="0" placeholder="Rouleaux" value="${qty}"/>
-      <button class="secondary remove">Supprimer</button>
-    `;
-    wrap.querySelector('.remove').onclick = () => { wrap.remove(); syncBaseOptions(); persist(); };
-    wrap.querySelector('.cname').addEventListener('input', ()=>{ syncBaseOptions(); persist(); });
-    wrap.querySelector('.cqty').addEventListener('input', ()=>{ persist(); });
-    return wrap;
-  }
-
-  function getData() {
-    const rows = [...colorsDiv.querySelectorAll('.row')];
-    const data = [];
-    for (const r of rows) {
-      const name = r.querySelector('.cname').value.trim();
-      const qty = Number(r.querySelector('.cqty').value);
-      if (name) data.push({name, qty: isFinite(qty) ? qty : 0});
+  function load(){
+    const raw = localStorage.getItem("ration_serie_v2");
+    if(raw){
+      try{
+        const parsed = JSON.parse(raw);
+        if(parsed && typeof parsed === "object"){
+          state.base = parsed.base ?? state.base;
+          state.colors = Array.isArray(parsed.colors) ? parsed.colors : state.colors;
+          state.series = Array.isArray(parsed.series) ? parsed.series : [];
+        }
+      }catch(e){}
     }
-    return data;
   }
 
-  function syncBaseOptions() {
-    const data = getData();
-    const current = baseSel.value;
-    baseSel.innerHTML = '';
-    for (const item of data) {
-      const opt = document.createElement('option');
-      opt.value = item.name;
-      opt.textContent = item.name;
-      baseSel.appendChild(opt);
-    }
-    if ([...baseSel.options].some(o => o.value === current)) baseSel.value = current;
+  function save(){
+    localStorage.setItem("ration_serie_v2", JSON.stringify({
+      base: state.base,
+      colors: state.colors,
+      series: state.series
+    }));
   }
 
-  function roundWithMode(x, mode) {
-    if (!isFinite(x)) return 0;
-    if (mode === 'floor') return Math.floor(x);
-    if (mode === 'ceil') return Math.ceil(x);
-    return Math.round(x); // nearest
+  function normalizeColors(){
+    // remove empty names, clamp quantities to integers >=0
+    state.colors = state.colors
+      .map(c=>({
+        name: (c.name ?? "").trim(),
+        qty: Math.max(0, Math.floor(Number(c.qty)||0))
+      }))
+      .filter(c=>c.name.length>0);
   }
 
-  function calc() {
-    const data = getData().filter(d => d.qty >= 0);
-    if (data.length === 0) {
-      outDiv.innerHTML = `<div class="small">Ajoute au moins une couleur.</div>`;
-      return;
-    }
-    syncBaseOptions();
+  function renderColors(){
+    $("base").value = state.base;
+    const wrap = $("colors");
+    wrap.innerHTML = "";
 
-    const baseName = baseSel.value || data[0].name;
-    const baseObj = data.find(d => d.name === baseName) || data[0];
-    const baseQty = baseObj.qty;
+    state.colors.forEach((c, i)=>{
+      const row = document.createElement("div");
+      row.className = "row";
+      row.style.margin = "8px 0";
 
-    const packBase = Math.max(1, Number(document.getElementById('packBase').value) || 1);
-    const mode = document.getElementById('roundMode').value || 'nearest';
+      const name = document.createElement("input");
+      name.value = c.name;
+      name.placeholder = "Couleur";
+      name.style.width = "220px";
+      name.oninput = ()=>{ state.colors[i].name = name.value; };
 
-    const rows = data.map(d => {
-      const ratio = (baseQty > 0) ? (d.qty / baseQty) : null;
-      let packQty;
-      if (d.name === baseName) {
-        packQty = packBase;
-      } else if (ratio === null) {
-        packQty = 0;
-      } else {
-        packQty = roundWithMode(ratio * packBase, mode);
+      const qty = document.createElement("input");
+      qty.type = "number";
+      qty.min = "0";
+      qty.step = "1";
+      qty.value = c.qty;
+      qty.placeholder = "Quantité";
+      qty.style.width = "160px";
+      qty.oninput = ()=>{ state.colors[i].qty = qty.value; };
+
+      const del = document.createElement("button");
+      del.textContent = "Supprimer";
+      del.className = "danger";
+      del.onclick = ()=>{
+        state.colors.splice(i,1);
+        normalizeColors(); save(); renderAll();
+      };
+
+      row.appendChild(name);
+      row.appendChild(qty);
+      row.appendChild(del);
+      wrap.appendChild(row);
+    });
+  }
+
+  function remainingStock(){
+    // start from initial colors, subtract all series allocations
+    const rem = {};
+    state.colors.forEach(c=> rem[c.name] = Math.max(0, Math.floor(Number(c.qty)||0)));
+
+    state.series.forEach(s=>{
+      for(const [k,v] of Object.entries(s.allocations)){
+        if(rem[k] == null) rem[k] = 0; // in case color list changed
+        rem[k] = Math.max(0, rem[k] - v);
       }
-      if (d.name !== baseName && d.qty > 0 && packQty === 0) packQty = 1;
-      return {...d, ratio, packQty};
+    });
+    return rem;
+  }
+
+  function sumRem(rem){
+    return Object.values(rem).reduce((a,b)=>a+b,0);
+  }
+
+  function genOneSeries(){
+    state.base = Math.max(1, Math.floor(Number($("base").value)||1));
+    normalizeColors();
+
+    const base = state.base;
+    const rem = remainingStock();
+
+    // Only use colors that exist in current list; if list changed, we still keep rem for old series columns later
+    const candidates = Object.entries(rem)
+      .filter(([name,qty]) => qty>0)
+      .sort((a,b)=> b[1]-a[1]); // highest remaining first
+
+    if(sumRem(rem) < base){
+      setStatus("Impossible de faire une série complète: stock restant total < base.", true);
+      return false;
+    }
+
+    let need = base;
+    const alloc = {};
+    for(const [name,qty] of candidates){
+      if(need<=0) break;
+      const take = Math.min(qty, need);
+      if(take>0){
+        alloc[name] = take;
+        need -= take;
+      }
+    }
+
+    if(need !== 0){
+      // theoretically shouldn't happen if sumRem>=base
+      setStatus("Erreur: la série n’a pas pu être remplie complètement.", true);
+      return false;
+    }
+
+    state.series.push({
+      index: state.series.length + 1,
+      base,
+      allocations: alloc
     });
 
-    let bottleneck = null;
-    let packsPossible = Infinity;
-    for (const r of rows) {
-      if (r.packQty > 0) {
-        const p = Math.floor(r.qty / r.packQty);
-        if (p < packsPossible) { packsPossible = p; bottleneck = r; }
-      }
-    }
-    if (!isFinite(packsPossible)) packsPossible = 0;
-
-    const rows2 = rows.map(r => ({
-      ...r,
-      used: packsPossible * r.packQty,
-      remain: r.qty - (packsPossible * r.packQty)
-    })).sort((a,b)=> b.qty - a.qty);
-
-    document.getElementById('kpiPacks').textContent = packsPossible;
-    document.getElementById('kpiBase').textContent = `${baseName} (base=${packBase})`;
-    document.getElementById('kpiBottleneck').textContent = bottleneck ? `${bottleneck.name}` : '—';
-
-    let html = `<div class="small"><span class="pill good">Pack entier</span> Pour <b>${packBase} ${escapeHtml(baseName)}</b> : ${
-      escapeHtml(rows2.filter(r=>r.packQty>0).map(r=>`${r.packQty} ${r.name}`).join(' • ') || '—')
-    }</div>`;
-
-    html += `<table style="margin-top:10px">
-      <thead><tr>
-        <th>Couleur</th>
-        <th>Stock</th>
-        <th>Ratio vs <span class="mono">${escapeHtml(baseName)}</span></th>
-        <th>Quantité pack (entier)</th>
-        <th>Packs possibles</th>
-        <th>Utilisé</th>
-        <th>Reste</th>
-      </tr></thead><tbody>`;
-
-    for (const r of rows2) {
-      const ratioTxt = (r.ratio === null) ? '—' : r.ratio.toFixed(2);
-      html += `<tr>
-        <td>${escapeHtml(r.name)}</td>
-        <td>${r.qty}</td>
-        <td>${ratioTxt}</td>
-        <td><b>${r.packQty}</b></td>
-        <td>${packsPossible}</td>
-        <td>${r.used}</td>
-        <td><b>${r.remain}</b></td>
-      </tr>`;
-    }
-    html += `</tbody></table>`;
-
-    html += `<div class="note small" style="margin-top:10px">
-      <span class="pill">Reste</span> Le surplus (“reste”) peut être vendu séparément, ou tu peux changer <b>Base du pack</b> / <b>Arrondi</b> pour ajuster.
-    </div>`;
-
-    outDiv.innerHTML = html;
+    save();
+    renderAll();
+    setStatus("Série ajoutée ✅", false);
+    return true;
   }
 
-  const KEY = 'ratio_de_serie_state_v2';
-
-  function persist() {
-    const state = {
-      colors: getData(),
-      base: baseSel.value,
-      packBase: Number(document.getElementById('packBase').value || 1),
-      roundMode: document.getElementById('roundMode').value
-    };
-    try {
-      localStorage.setItem(KEY, JSON.stringify(state));
-      saveState.textContent = 'Sauvegardé ✓';
-      setTimeout(()=>{ saveState.textContent=''; }, 900);
-    } catch(e) {
-      saveState.textContent = 'Sauvegarde impossible';
+  function genAllSeries(){
+    let made = 0;
+    // safety cap to avoid infinite loops if something weird happens
+    for(let i=0;i<5000;i++){
+      const ok = genOneSeries();
+      if(!ok) break;
+      made++;
     }
+    if(made===0){
+      // status already set
+      return;
+    }
+    setStatus(`${made} série(s) générée(s) ✅`, false);
   }
 
-  function restore() {
-    try {
-      const raw = localStorage.getItem(KEY);
-      if (!raw) return false;
-      const state = JSON.parse(raw);
-      colorsDiv.innerHTML = '';
-      for (const c of (state.colors || [])) colorsDiv.appendChild(makeRow(c.name, c.qty));
-      if ((state.colors || []).length === 0) return false;
-      syncBaseOptions();
-      if (state.base) baseSel.value = state.base;
-      if (state.packBase) document.getElementById('packBase').value = state.packBase;
-      if (state.roundMode) document.getElementById('roundMode').value = state.roundMode;
-      return true;
-    } catch(e) { return false; }
+  function setStatus(msg, danger){
+    $("status").innerHTML = `<span class="${danger ? "danger" : "ok"}">${msg}</span>`;
   }
 
-  document.getElementById('exportBtn').onclick = () => {
-    const state = localStorage.getItem(KEY) || '{}';
-    const blob = new Blob([state], {type:'application/json'});
-    const a = document.createElement('a');
-    a.href = URL.createObjectURL(blob);
-    a.download = 'ratio-de-serie-sauvegarde.json';
-    a.click();
-    URL.revokeObjectURL(a.href);
+  function renderList(){
+    const list = $("list");
+    if(state.series.length===0){
+      list.innerHTML = `<div class="muted">Aucune série pour le moment.</div>`;
+      return;
+    }
+
+    const lines = state.series.map(s=>{
+      const parts = Object.entries(s.allocations).map(([k,v])=>`${k}: ${v}`).join(" • ");
+      return `<div style="margin:6px 0"><b>Série ${s.index}</b> (Base ${s.base}) — ${parts}</div>`;
+    });
+    list.innerHTML = lines.join("");
+  }
+
+  function allColorNamesForTable(){
+    // union of current colors + colors seen in series
+    const set = new Set();
+    state.colors.forEach(c=> set.add(c.name));
+    state.series.forEach(s=>{
+      Object.keys(s.allocations).forEach(k=> set.add(k));
+    });
+    return Array.from(set);
+  }
+
+  function renderTable(){
+    const table = $("table");
+    const cols = allColorNamesForTable();
+    if(state.series.length===0){
+      table.innerHTML = `<tr><td class="muted">Aucune donnée.</td></tr>`;
+      return;
+    }
+
+    let html = "<tr><th>Série</th><th>Base</th>";
+    cols.forEach(c=> html += `<th>${c}</th>`);
+    html += "</tr>";
+
+    state.series.forEach(s=>{
+      html += `<tr><td><b>${s.index}</b></td><td>${s.base}</td>`;
+      cols.forEach(c=>{
+        const v = s.allocations[c] ?? 0;
+        html += `<td>${v}</td>`;
+      });
+      html += "</tr>";
+    });
+
+    table.innerHTML = html;
+  }
+
+  function renderReste(){
+    const rest = $("restTable");
+    const rem = remainingStock();
+    const cols = allColorNamesForTable();
+    let html = "<tr>";
+    cols.forEach(c=> html += `<th>${c}</th>`);
+    html += "<th>Total restant</th></tr><tr>";
+    cols.forEach(c=> html += `<td>${rem[c] ?? 0}</td>`);
+    html += `<td><b>${sumRem(rem)}</b></td></tr>`;
+    rest.innerHTML = html;
+  }
+
+  function renderAll(){
+    renderColors();
+    renderList();
+    renderTable();
+    renderReste();
+  }
+
+  // UI handlers
+  $("addColor").onclick = ()=>{
+    state.colors.push({name:"", qty:0});
+    renderColors();
   };
 
-  document.getElementById('importBtn').onclick = () => document.getElementById('importFile').click();
-  document.getElementById('importFile').addEventListener('change', async (e) => {
-    const file = e.target.files && e.target.files[0];
-    if (!file) return;
-    const text = await file.text();
-    try {
-      JSON.parse(text);
-      localStorage.setItem(KEY, text);
-      restore();
-      calc();
-      alert('Sauvegarde importée ✅');
-    } catch(err) {
-      alert('Fichier invalide ❌');
-    }
-  });
-
-  document.getElementById('addColor').onclick = () => { colorsDiv.appendChild(makeRow()); syncBaseOptions(); persist(); };
-  document.getElementById('calc').onclick = () => { persist(); calc(); };
-  document.getElementById('clearAll').onclick = () => {
-    colorsDiv.innerHTML = '';
-    syncBaseOptions();
-    outDiv.innerHTML = `<div class="small">Rien à afficher.</div>`;
-    document.getElementById('kpiPacks').textContent = '—';
-    document.getElementById('kpiBase').textContent = '—';
-    document.getElementById('kpiBottleneck').textContent = '—';
-    localStorage.removeItem(KEY);
+  $("save").onclick = ()=>{
+    state.base = Math.max(1, Math.floor(Number($("base").value)||1));
+    normalizeColors(); save(); renderAll();
+    setStatus("Enregistré ✅", false);
   };
-  document.getElementById('loadExample').onclick = () => {
-    colorsDiv.innerHTML = '';
-    const ex = [
-      ['Noir', 86], ['Gris', 88], ['Bordeaux', 20], ['Blanc', 21], ['Rose', 24],
-      ['Beige', 52], ['Bleu', 48], ['Kaki', 52], ['Marron', 52],
-    ];
-    for (const [n,q] of ex) colorsDiv.appendChild(makeRow(n,q));
-    syncBaseOptions();
-    baseSel.value = 'Bordeaux';
-    document.getElementById('packBase').value = 1;
-    document.getElementById('roundMode').value = 'nearest';
-    persist();
-    calc();
-  };
-  document.getElementById('packBase').addEventListener('input', persist);
-  document.getElementById('roundMode').addEventListener('change', persist);
-  baseSel.addEventListener('change', persist);
 
-  if (!restore()) {
-    colorsDiv.appendChild(makeRow('Noir', 0));
-    colorsDiv.appendChild(makeRow('Gris', 0));
-    colorsDiv.appendChild(makeRow('Bordeaux', 0));
-    syncBaseOptions();
-    baseSel.value = 'Bordeaux';
-  }
-  outDiv.innerHTML = `<div class="small">Entre tes stocks puis clique “Calculer”.</div>`;
+  $("reset").onclick = ()=>{
+    localStorage.removeItem("ration_serie_v2");
+    location.reload();
+  };
+
+  $("genOne").onclick = ()=> genOneSeries();
+  $("genAll").onclick = ()=> genAllSeries();
+
+  $("clearSeries").onclick = ()=>{
+    state.series = [];
+    save(); renderAll();
+    setStatus("Séries effacées ✅", false);
+  };
+
+  // init
+  load();
+  state.base = Math.max(1, Math.floor(Number(state.base)||1));
+  normalizeColors();
+  renderAll();
 </script>
 </body>
 </html>
